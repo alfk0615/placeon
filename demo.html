@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>플레이스ON — 풀 데모</title>
+<style>
+  :root{--ink:#141F1A;--paper:#F3F5F2;--card:#fff;--deep:#0E4D36;--green:#03C75A;
+    --amber:#E8930C;--red:#D64545;--line:#DEE4DF;--mut:#68766E;--band:#F6E8C6;
+    --mono:"SF Mono",ui-monospace,Consolas,monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-size:15px;line-height:1.6;
+    font-family:Pretendard,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+  a{color:inherit;text-decoration:none}
+  .view{display:none}.view.on{display:block}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--deep);
+    color:#fff;font-weight:700;font-size:13px;padding:11px 22px;border-radius:99px;
+    opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  .demo-bar{background:var(--deep);color:#fff;text-align:center;font-size:12.5px;
+    font-weight:700;padding:8px 14px;position:sticky;top:0;z-index:50}
+  .demo-bar b{color:#7BD8A8}
+
+  /* ───────── 랜딩 ───────── */
+  .wrapL{max-width:1040px;margin:0 auto;padding:0 22px}
+  .top{background:rgba(243,245,242,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .top .wrapL{display:flex;align-items:center;gap:12px;height:58px}
+  .logo{font-weight:900;font-size:17px;cursor:pointer}
+  .logo i{font-style:normal;color:var(--deep)}
+  .logo .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:7px;vertical-align:1px}
+  .top nav{margin-left:auto;display:flex;gap:20px;font-size:14px;color:var(--mut);font-weight:600}
+  .pill{background:var(--deep);color:#fff;font-weight:800;font-size:13px;padding:9px 18px;border-radius:99px;cursor:pointer;border:none;font-family:inherit}
+  @media(max-width:720px){.top nav{display:none}}
+  .hero{padding:74px 0 64px}
+  .hero .wrapL{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+  @media(max-width:860px){.hero .wrapL{grid-template-columns:1fr;gap:36px}}
+  .eyebrow{display:inline-block;font-size:12.5px;font-weight:800;color:var(--deep);
+    background:#E4F0E9;padding:5px 13px;border-radius:99px;margin-bottom:18px}
+  h1{font-size:clamp(30px,4.6vw,44px);line-height:1.22;font-weight:900;letter-spacing:-.035em}
+  h1 .u{box-shadow:inset 0 -0.34em 0 #CDEBD9}
+  .lead{margin-top:18px;color:#3C4A43;font-size:16.5px;max-width:30em}
+  .btnrow{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+  .lgbtn{display:inline-block;font-weight:800;font-size:15px;padding:14px 26px;border-radius:12px;cursor:pointer;border:none;font-family:inherit}
+  .lgbtn.pri{background:var(--deep);color:#fff}
+  .lgbtn.sec{background:#fff;border:1.5px solid var(--line)}
+  .fine{margin-top:13px;font-size:13px;color:var(--mut)}
+  .livebox{background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:20px 20px 14px;box-shadow:0 20px 50px -30px rgba(14,77,54,.35)}
+  .livebox .head{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;font-size:13.5px}
+  .livebox .head span{font-family:var(--mono);font-size:11.5px;color:var(--mut)}
+  .livebox svg{width:100%;display:block}
+  .livebox .log{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;
+    font-family:var(--mono);font-size:11.5px;color:var(--mut);height:64px;overflow:hidden}
+  .livebox .log b.up{color:var(--green)}.livebox .log b.dn{color:var(--red)}
+  section.L{padding:70px 0}
+  .sec-eyebrow{font-size:13px;font-weight:800;color:var(--deep);margin-bottom:12px}
+  h2.L{font-size:clamp(23px,3.4vw,32px);font-weight:900;letter-spacing:-.03em;line-height:1.3}
+  .subL{color:#4A574F;margin-top:13px;max-width:36em}
+  .prob{background:#0F1E17;color:#E8EFE9}
+  .prob h2.L{color:#fff}.prob .subL{color:#A9BCB0}
+  .prob .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+  @media(max-width:720px){.prob .grid{grid-template-columns:1fr}}
+  .prob .card{background:#16281F;border:1px solid #24382D;border-radius:16px;padding:24px}
+  .prob .card b{display:block;font-size:16.5px;margin-bottom:8px;color:#fff}
+  .prob .card p{font-size:14px;color:#A9BCB0}
+  .prob .tag2{font-family:var(--mono);font-size:11px;color:var(--amber);display:block;margin-bottom:10px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px}
+  .step .n{font-family:var(--mono);font-weight:800;font-size:12.5px;color:var(--deep);
+    background:#E4F0E9;display:inline-block;padding:3px 11px;border-radius:99px;margin-bottom:13px}
+  .step b{display:block;font-size:16.5px;margin-bottom:8px}
+  .step p{font-size:14px;color:#4A574F}
+  .step .ex{margin-top:13px;background:var(--paper);border-radius:10px;padding:9px 12px;
+    font-family:var(--mono);font-size:11.5px;color:var(--deep)}
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+  @media(max-width:720px){.dgrid{grid-template-columns:1fr}}
+  .dcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .dcard b{display:block;font-size:16px;margin-bottom:7px}
+  .dcard p{font-size:14px;color:#4A574F}
+  .dcard .ic{font-size:21px;display:block;margin-bottom:10px}
+  .pcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+  @media(max-width:820px){.pcards{grid-template-columns:1fr}}
+  .pcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:26px 24px;
+    position:relative;display:flex;flex-direction:column}
+  .pcard.hot{border-color:var(--deep)}
+  .pcard .best{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+    background:var(--deep);color:#fff;font-size:11.5px;font-weight:800;padding:4px 14px;border-radius:99px}
+  .pcard .nm{font-weight:800;font-size:15.5px}
+  .pcard .for{font-size:12.5px;color:var(--mut);margin-top:4px;min-height:2.6em}
+  .pcard .amt{margin:14px 0 2px;font-family:var(--mono)}
+  .pcard .amt b{font-size:28px;font-weight:800}
+  .pcard .amt span{color:var(--mut);font-size:12.5px}
+  .pcard ul{list-style:none;margin:14px 0 20px;flex:1}
+  .pcard li{font-size:13.5px;padding:5px 0 5px 22px;position:relative;color:#3C4A43}
+  .pcard li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .last{background:var(--deep);color:#fff;text-align:center;border-radius:24px;padding:56px 28px;margin:0 22px}
+  .last h2.L{color:#fff}.last p{color:#BCD9C8;margin-top:10px}
+  .last .btnrow{justify-content:center}
+  .last .lgbtn.pri{background:#fff;color:var(--deep)}
+  .last .lgbtn.sec{background:transparent;border-color:#3E6B57;color:#fff}
+  footer{padding:40px 0 56px;color:var(--mut);font-size:13px}
+  footer .wrapL{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}
+  footer b{color:var(--ink)}
+
+  /* ───────── 로그인 ───────── */
+  .loginwrap{min-height:78vh;display:grid;place-items:center;padding:40px 16px}
+  .loginbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px 30px;width:min(380px,92vw)}
+  .loginbox h3{font-size:19px;font-weight:800;margin-bottom:4px}
+  .loginbox h3 i{font-style:normal;color:var(--deep)}
+  .loginbox p{color:var(--mut);font-size:13px;margin-bottom:18px}
+  .loginbox input{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:11px 12px;
+    font:inherit;font-size:14px;margin-bottom:12px}
+  .loginbox button{width:100%;cursor:pointer;border:none;background:var(--deep);color:#fff;
+    padding:12px;border-radius:9px;font-weight:800;font-size:14px;font-family:inherit}
+  .loginbox .back{background:none;color:var(--mut);font-weight:600;margin-top:6px}
+
+  /* ───────── 앱(패널) ───────── */
+  .wrapA{max-width:1080px;margin:0 auto;padding:20px 20px 70px;font-size:14px}
+  .wrapA header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .wrapA h1{font-size:19px}
+  .badge{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:99px;font-weight:700}
+  .badge.dry{background:#fff;color:var(--amber);border:1.5px solid var(--amber)}
+  .badge.live{background:var(--red);color:#fff}
+  .badge.ok{background:#E6F9EE;color:#0A7A3D}
+  .appnav{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--line);overflow-x:auto}
+  .appnav button{border:none;background:none;font:inherit;font-weight:800;color:var(--mut);
+    padding:10px 15px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+  .appnav button.on{color:var(--deep);border-color:var(--deep)}
+  .atab{display:none}.atab.on{display:block}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .panel h2{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--mut);margin-bottom:12px}
+  .wrapA input,.wrapA select{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;
+    font:inherit;font-size:13.5px;background:#fff;width:100%}
+  .wrapA input[type=number]{padding:6px 8px;font-family:var(--mono)}
+  .btn{cursor:pointer;border:1.5px solid var(--deep);background:var(--deep);color:#fff;
+    padding:9px 18px;border-radius:9px;font-weight:800;font-size:13px;font-family:inherit;white-space:nowrap}
+  .btn.ghost{background:#fff;color:var(--deep)}
+  .btn.warn{border-color:var(--red);background:var(--red)}
+  .btn.sm{padding:5px 12px;font-size:12px}
+  .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grow{flex:1}
+  .hint{color:var(--mut);font-size:12.5px}
+  .mono{font-family:var(--mono)}
+  .toggle{width:auto;transform:scale(1.2);accent-color:var(--deep);cursor:pointer}
+  .wrapA table{width:100%;border-collapse:collapse;font-size:13px}
+  .wrapA th{color:var(--mut);text-align:left;padding:7px 8px;border-bottom:1.5px solid var(--line);font-size:11.5px}
+  .wrapA td{padding:7px 8px;border-bottom:1px solid var(--line)}
+  .wrapA td.num{font-family:var(--mono)}
+  .act{font-family:var(--mono);font-weight:800;font-size:12px;padding:1px 7px;border-radius:5px}
+  .act.UP{background:#E6F9EE;color:#0A7A3D}.act.DOWN{background:#FCEBEB;color:var(--red)}
+  .act.HOLD{background:var(--paper);color:var(--mut)}
+  .tag{font-size:11px;font-weight:800;padding:1px 8px;border-radius:99px}
+  .tag.PLACE{background:#E6F9EE;color:#0A7A3D}.tag.WEB{background:#E8EEFB;color:#2A5BD7}
+  .note{background:#FBF7EC;border:1px solid #EBDFC2;border-radius:10px;padding:11px 14px;
+    font-size:12.5px;color:#6B5A2E;margin-top:12px}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .camp{background:var(--paper);border-radius:10px;padding:10px 14px;margin:16px 0 8px;
+    font-weight:800;display:flex;gap:10px;align-items:center}
+  .growrow{display:grid;grid-template-columns:44px 1fr 100px 110px 130px;gap:10px;
+    align-items:center;padding:10px 6px;border-bottom:1px solid var(--line)}
+  .growrow.kwrow{background:#FAFBFA}
+  .growrow .nm b{font-size:14px}
+  .growrow .nm .hint{display:block}
+  .colhead{display:grid;grid-template-columns:44px 1fr 100px 110px 130px;gap:10px;
+    padding:6px;font-size:11.5px;color:var(--mut);font-weight:800;border-bottom:1.5px solid var(--line)}
+  .kwzone{margin:6px 0 14px 44px;border-left:3px solid var(--line);padding-left:12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+  @media(max-width:760px){.growrow,.colhead{grid-template-columns:36px 1fr 70px 80px 0}}
+</style>
+</head>
+<body>
+<div class="demo-bar">플레이스ON <b>풀 데모</b> — 홈페이지 → 시작하기 → 로그인 → 관리 패널까지, 실제 사이트 동선 그대로 눌러보세요.</div>
+
+<!-- ═══════════ ① 홈페이지(랜딩) ═══════════ -->
+<div class="view on" id="view-landing">
+  <div class="top"><div class="wrapL">
+    <span class="logo" onclick="go('landing')"><span class="dot"></span>플레이스<i>ON</i></span>
+    <nav><a href="#l-how">작동 방식</a><a href="#l-diff">왜 다른가</a><a href="#l-price">요금</a></nav>
+    <button class="pill" onclick="go('login')">첫 달 무료 시작</button>
+  </div></div>
+
+  <section class="hero"><div class="wrapL">
+    <div>
+      <span class="eyebrow">네이버 플레이스 광고 자동입찰</span>
+      <h1>순위를 정하세요.<br><span class="u">지키는 건 시스템</span>이<br>합니다.</h1>
+      <p class="lead">"우리 매장은 첫 페이지 3위." 대표님이 정하는 건 그 한 줄이면 됩니다.
+        플레이스ON가 매시간 노출순위를 확인하고, 밀리면 올리고 넘치면 내려서 같은 광고비로 그 자리를 지킵니다.</p>
+      <div class="btnrow">
+        <button class="lgbtn pri" onclick="go('login')">첫 달 무료로 시작</button>
+        <button class="lgbtn sec" onclick="toast('실제 사이트에서는 카카오톡 채널이 열립니다')">카카오톡 상담</button>
+      </div>
+      <p class="fine">신용카드 등록 없이 시작 · 언제든 해지 가능</p>
+    </div>
+    <div class="livebox">
+      <div class="head"><b>실시간 순위 유지</b><span id="dTime">14:00</span>
+        <span style="margin-left:auto">희망순위 <b style="color:var(--deep)">3위</b></span></div>
+      <svg id="dSvg" viewBox="0 0 420 210"></svg>
+      <div class="log" id="dLog"></div>
+    </div>
+  </div></section>
+
+  <section class="L prob"><div class="wrapL">
+    <div class="sec-eyebrow" style="color:#7BD8A8">셋팅만 하고 방치된 플레이스 광고</div>
+    <h2 class="L">광고비는 두 곳에서 조용히 샙니다</h2>
+    <p class="subL">입찰가를 한 번 정해두고 두는 순간, 시장은 매일 바뀌는데 광고만 그대로입니다.</p>
+    <div class="grid">
+      <div class="card"><span class="tag2">누수 1 — 순위 미달</span><b>피크 전에 예산이 마릅니다</b>
+        <p>새벽·오전의 비효율 시간대가 예산을 먼저 가져가면, 정작 점심·저녁 피크에는 광고가 꺼져 있습니다.</p></div>
+      <div class="card"><span class="tag2">누수 2 — 순위 과잉</span><b>3위면 충분한데 1위 값을 냅니다</b>
+        <p>경쟁이 빠진 시간대에는 낮은 입찰가로도 상위가 유지됩니다. 아무도 안 보면 필요 없는 단가를 하루 종일 냅니다.</p></div>
+    </div>
+  </div></section>
+
+  <section class="L" id="l-how"><div class="wrapL">
+    <div class="sec-eyebrow">작동 방식</div>
+    <h2 class="L">대표님은 목표만, 나머지는 자동</h2>
+    <div class="steps">
+      <div class="step"><span class="n">STEP 1</span><b>희망순위를 정합니다</b>
+        <p>광고그룹마다, 원하면 키워드마다 목표 순위를 직접 정합니다.</p>
+        <div class="ex">검단신도시고기집 → 희망 3위</div></div>
+      <div class="step"><span class="n">STEP 2</span><b>매시간 확인하고 조정합니다</b>
+        <p>네이버 공식 API로 평균 노출순위를 확인해 밀리면 올리고, 넘치면 내려 단가를 아낍니다. 365일.</p>
+        <div class="ex">평균 1.9위 → 입찰가 ▼ 단가 절약</div></div>
+      <div class="step"><span class="n">STEP 3</span><b>안전선 안에서만 움직입니다</b>
+        <p>상한가 위로는 절대 안 올라가고, 예산이 빨리 닳으면 인상을 멈춥니다.</p>
+        <div class="ex">상한 1,500원 · 예산 과속 시 인상 보류</div></div>
+    </div>
+  </div></section>
+
+  <section class="L" id="l-diff" style="padding-top:0"><div class="wrapL">
+    <div class="sec-eyebrow">왜 플레이스ON인가</div>
+    <h2 class="L">팔기 위해 만든 게 아니라,<br>쓰기 위해 만들었습니다</h2>
+    <p class="subL">자영업 마케팅회사가 자사 관리 매장에 직접 운영하는 시스템 — 그대로 드립니다.</p>
+    <div class="dgrid">
+      <div class="dcard"><span class="ic">🎯</span><b>키워드 단위 목표 설정</b>
+        <p>키워드 하나하나에 다른 희망순위와 상한가. 지킬 키워드에만 예산이 집중됩니다.</p></div>
+      <div class="dcard"><span class="ic">🛡️</span><b>이중 안전장치</b>
+        <p>상한가 절대 준수 + 예산 소진 속도 감시. 정한 선 밖으로는 한 발도 안 나갑니다.</p></div>
+      <div class="dcard"><span class="ic">📄</span><b>일일보고서 자동 생성</b>
+        <p>전일 대비 성과, 희망순위 달성 여부, 시간대별 클릭까지 매일 아침 자동으로.</p></div>
+      <div class="dcard"><span class="ic">🔔</span><b>잔액 부족 사전 경고</b>
+        <p>비즈머니가 이틀치 아래로 내려가면 미리 알립니다. 광고가 꺼지는 사고를 막습니다.</p></div>
+    </div>
+  </div></section>
+
+  <section class="L" id="l-price" style="padding-top:0"><div class="wrapL">
+    <div class="sec-eyebrow">요금</div>
+    <h2 class="L">매장 규모에 맞게, 첫 달은 무료</h2>
+    <div class="pcards">
+      <div class="pcard"><div class="nm">스타트</div>
+        <div class="for">플레이스 광고 하나만 제대로 지키고 싶은 대표님</div>
+        <div class="amt"><b>99,000</b><span>원 / 월 · VAT 별도</span></div>
+        <ul><li>자동입찰 슬롯 5개</li><li>희망순위 · 상한가 설정</li><li>일일보고서</li><li>잔액 부족 경고</li></ul>
+        <button class="lgbtn sec" onclick="go('login')">첫 달 무료 시작</button></div>
+      <div class="pcard hot"><span class="best">BEST</span><div class="nm">프로</div>
+        <div class="for">플레이스 + 파워링크를 함께 돌리는 대표님</div>
+        <div class="amt"><b>199,000</b><span>원 / 월 · VAT 별도</span></div>
+        <ul><li>자동입찰 슬롯 20개</li><li>키워드별 목표순위</li><li>파워링크 예산 페이싱</li><li>일일보고서 + 잔액 경고</li></ul>
+        <button class="lgbtn pri" onclick="go('login')">첫 달 무료 시작</button></div>
+      <div class="pcard"><div class="nm">멀티 · 대행사</div>
+        <div class="for">매장 여러 곳 또는 대행 운영</div>
+        <div class="amt"><b>상담</b><span> 후 안내</span></div>
+        <ul><li>광고계정 무제한 연결</li><li>계정별 통합 대시보드</li><li>맞춤 리포트 · 전담 지원</li></ul>
+        <button class="lgbtn sec" onclick="toast('실제 사이트에서는 카카오톡 채널이 열립니다')">카카오톡 문의</button></div>
+    </div>
+  </div></section>
+
+  <section class="L" style="padding-top:0">
+    <div class="last">
+      <h2 class="L">오늘 밤에도 광고비는 돌고 있습니다</h2>
+      <p>지금 시작하면 내일 아침 첫 보고서부터 받아보실 수 있습니다.</p>
+      <div class="btnrow">
+        <button class="lgbtn pri" onclick="go('login')">첫 달 무료로 시작</button>
+        <button class="lgbtn sec" onclick="toast('실제 사이트에서는 카카오톡 채널이 열립니다')">카카오톡 상담하기</button>
+      </div>
+    </div>
+  </section>
+
+  <footer><div class="wrapL">
+    <b>플레이스ON</b><span>자영업 마케팅회사 YJL컴퍼니가 만들고 직접 운영하는 자동입찰 시스템</span>
+    <span style="margin-left:auto">이용약관 · 개인정보처리방침 · 상담문의</span>
+  </div></footer>
+</div>
+
+<!-- ═══════════ ② 로그인 ═══════════ -->
+<div class="view" id="view-login">
+  <div class="loginwrap"><div class="loginbox">
+    <h3>플레이스<i>ON</i></h3>
+    <p>데모입니다 — 아무 비밀번호나 입력하고 로그인해 보세요</p>
+    <input type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')go('app')">
+    <button onclick="go('app')">로그인</button>
+    <button class="back" onclick="go('landing')">← 홈페이지로 돌아가기</button>
+  </div></div>
+</div>
+
+<!-- ═══════════ ③ 관리 패널 ═══════════ -->
+<div class="view" id="view-app">
+<div class="wrapA">
+  <header>
+    <h1>플레이스<i style="font-style:normal;color:var(--deep)">지기</i></h1>
+    <span class="badge live">자동입찰 60분 주기</span>
+    <span class="badge dry">DRY-RUN</span>
+    <span class="grow"></span>
+    <button class="btn ghost sm" onclick="go('landing')">← 홈페이지</button>
+    <button class="btn ghost sm" onclick="go('login')">로그아웃</button>
+  </header>
+  <div class="appnav">
+    <button class="on" data-t="home">홈</button>
+    <button data-t="conn">계정</button>
+    <button data-t="bid">자동입찰 설정</button>
+    <button data-t="mon">관제</button>
+    <button data-t="content">콘텐츠</button>
+    <button data-t="rpt">일일보고</button>
+  </div>
+
+  <section class="atab" id="at-content">
+    <div class="panel">
+      <div class="flex">
+        <select style="width:auto;min-width:240px"><option>한마음정육식당 검단신도시점</option><option>수림정 천안신방점</option></select>
+        <span class="badge dry">이달 소식 미발행</span>
+      </div>
+      <h2 style="margin-top:14px">매장 톤 프로필 (매장당 1회 저장)</h2>
+      <div class="kv">
+        <div><label class="hint">말투</label><select><option>따뜻하고 정감있는, 이모지 1~2개 사용</option></select></div>
+        <div><label class="hint">매장 특징 · 자랑거리</label><input value="당일 손질 생갈비, 점심특선, 단체룸"></div>
+      </div>
+      <div class="kv">
+        <div><label class="hint">금지어 · 주의사항</label><input value="할인율 확정 표현 금지"></div>
+        <div><label class="hint">기본 타겟 키워드</label><input value="검단신도시맛집, 검단 고기집"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn ghost" onclick="toast('✓ 프로필 저장 — 소식·답글에 자동 반영 (데모)')">프로필 저장</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>소식 작성 — 키워드를 주면 매장 말투로 씁니다 (월 1회)</h2>
+      <div class="kv">
+        <div><label class="hint">타겟 키워드</label><input value="검단신도시맛집, 점심특선"></div>
+        <div><label class="hint">소식 유형</label><select><option>쿠폰 안내</option><option>신메뉴 · 시즌 메뉴 소개</option></select></div>
+      </div>
+      <label class="hint" style="display:block;margin-top:10px">핵심 내용</label>
+      <input value="여름 한정 물냉면 출시, 갈비탕 세트 주문 시 냉면 3천원">
+      <div class="flex" style="margin-top:12px">
+        <button class="btn" onclick="toast('실제 버전: AI가 10~20초 만에 버전 2개를 생성해요')">소식 생성</button>
+        <span class="grow"></span>
+        <button class="btn ghost" onclick="toast('✓ 발행 기록 — 홈의 소식 필요 표시가 다음 달까지 꺼져요')">스마트플레이스에 발행 완료</button>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px">
+        <div class="flex"><b style="font-size:15px">검단신도시맛집 여름 한정, 물냉면 나왔습니다</b>
+          <span class="hint mono">제목 22자</span><span class="badge ok">쿠폰명: 검단맛집 냉면쿠폰</span></div>
+        <div style="background:var(--paper);border-radius:8px;padding:11px 13px;margin-top:8px;font-size:13.5px;line-height:1.7">더위가 본격적으로 시작됐죠. 검단신도시맛집을 찾아주시는 단골 손님들께 여름 소식 하나 전해드립니다. 🍜 이번 주부터 여름 한정 물냉면을 시작합니다. 직접 뽑는 육수에 살얼음을 띄워, 갈비 드시고 마무리하기 딱 좋습니다. 갈비탕 세트를 주문하시면 물냉면을 3,000원에 드려요. 점심특선 시간(11:30~14:00)에도 동일하게 적용됩니다. 재료 소진 시 조기 마감될 수 있으니, 방문 전 전화 주시면 준비해 두겠습니다. 시원한 한 그릇 하러 오세요 😊</div>
+        <div class="flex" style="margin-top:8px">
+          <button class="btn ghost sm" onclick="toast('✓ 복사됨 — 스마트플레이스 소식에 붙여넣으세요')">제목+본문 복사</button>
+          <span class="hint">키워드 삽입: 검단신도시맛집 2회 · 점심특선 1회 — 자동 준수</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>리뷰 답글 — 리뷰 붙여넣으면 일괄 생성</h2>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px">
+        <div class="flex"><b>김**</b><span class="badge ok">긍정</span></div>
+        <div class="hint" style="background:var(--paper);border-radius:8px;padding:8px 11px;margin-top:6px">고기 질이 진짜 좋아요. 점심특선 가성비 최고!</div>
+        <div style="border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;margin-top:8px;font-size:13.5px">김** 님, 고기 칭찬은 저희가 제일 좋아하는 말이에요 😊 당일 손질한 생갈비만 내고 있어서 알아봐 주시니 힘이 납니다. 점심특선은 계속 유지할 예정이니 다음엔 물냉면도 곁들여 보세요!</div>
+        <div style="margin-top:6px"><button class="btn ghost sm" onclick="toast('✓ 복사됨')">답글 복사</button></div>
+      </div>
+      <div style="border:1px solid var(--amber);border-radius:12px;padding:13px;background:#FFFDF6">
+        <div class="flex"><b>이**</b><span class="badge dry">⚠ 부정 — 우선 대응</span></div>
+        <div class="hint" style="background:var(--paper);border-radius:8px;padding:8px 11px;margin-top:6px">웨이팅이 너무 길었어요. 맛은 있는데 자리 안내가 늦어서 아쉬웠습니다.</div>
+        <div style="border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;margin-top:8px;font-size:13.5px">이** 님, 오래 기다리게 해드려 죄송합니다. 말씀 주신 자리 안내 지연은 피크 시간 인원 배치를 조정해 개선하겠습니다. 불편을 드렸는데도 맛을 좋게 봐주셔서 감사하고, 다음 방문 때는 기다림 없이 모실 수 있도록 준비하겠습니다.</div>
+        <div style="margin-top:6px"><button class="btn ghost sm" onclick="toast('✓ 복사됨')">답글 복사</button></div>
+      </div>
+      <div class="note">부정 리뷰는 자동 감지 → 이모지 없이 사과·개선·재방문 요청 톤으로 따로 작성됩니다. 최종 등록은 항상 사람이 확인 후 직접.</div>
+    </div>
+  </section>
+
+  <section class="atab on" id="at-home">
+    <div class="panel">
+      <div class="flex"><h2 style="margin:0">전체 계정 현황</h2><span class="grow"></span>
+        <button class="btn ghost sm" onclick="toast('실제 버전은 네이버에서 실시간으로 가져와요')">새로고침</button></div>
+      <div class="kv" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));margin-top:12px">
+        <div class="card">
+          <div class="flex"><b>한마음정육식당 검단신도시점</b><span class="grow"></span><span class="badge live">잔액 부족</span></div>
+          <div class="flex" style="margin-top:8px;gap:14px">
+            <div><div class="hint">비즈머니</div><div class="mono" style="font-weight:800;color:var(--red)">₩12,213</div></div>
+            <div><div class="hint">이달 광고비</div><div class="mono" style="font-weight:800">₩417,764</div></div>
+            <div><div class="hint">자동입찰</div><div style="font-weight:800;color:var(--green)">2 정상</div></div></div>
+          <div class="hint" style="margin-top:10px">최근 7일 (직전 7일 대비)</div>
+          <div class="flex" style="gap:14px;margin-top:4px">
+            <div><div class="hint">노출</div><div class="mono">6,765 <span style="color:var(--red);font-size:12px">▼22%</span></div></div>
+            <div><div class="hint">클릭</div><div class="mono">183 <span style="color:var(--red);font-size:12px">▼21%</span></div></div>
+            <div><div class="hint">CPC</div><div class="mono">1,326원 <span style="color:var(--red);font-size:12px">▲4%</span></div></div>
+            <div><div class="hint">비용</div><div class="mono">242,597원 <span style="color:var(--green);font-size:12px">▼18%</span></div></div></div>
+        </div>
+        <div class="card">
+          <div class="flex"><b>수림정 천안신방점</b><span class="grow"></span><span class="badge dry">소식 필요</span></div>
+          <div class="flex" style="margin-top:8px;gap:14px">
+            <div><div class="hint">비즈머니</div><div class="mono" style="font-weight:800">₩284,500</div></div>
+            <div><div class="hint">이달 광고비</div><div class="mono" style="font-weight:800">₩523,110</div></div>
+            <div><div class="hint">자동입찰</div><div style="font-weight:800"><span style="color:var(--green)">3 정상</span> · <span style="color:var(--amber)">1 주의</span></div></div></div>
+          <div class="hint" style="margin-top:10px">최근 7일 (직전 7일 대비)</div>
+          <div class="flex" style="gap:14px;margin-top:4px">
+            <div><div class="hint">노출</div><div class="mono">18,204 <span style="color:var(--green);font-size:12px">▲19%</span></div></div>
+            <div><div class="hint">클릭</div><div class="mono">512 <span style="color:var(--green);font-size:12px">▲21%</span></div></div>
+            <div><div class="hint">CPC</div><div class="mono">644원 <span style="color:var(--green);font-size:12px">▼10%</span></div></div>
+            <div><div class="hint">비용</div><div class="mono">329,700원 <span class="hint" style="font-size:12px">▲1%</span></div></div></div>
+        </div>
+        <div class="card" style="border-style:dashed;color:var(--mut)">
+          <b style="color:var(--ink)">부오상회 을지로점</b>
+          <div class="hint" style="margin-top:4px">API 키 미입력 — 계정 탭에서 입력</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="atab" id="at-conn">
+    <div class="panel">
+      <h2>네이버 검색광고 API 연결 — 매장(광고계정)마다 각각</h2>
+      <div class="kv">
+        <div><label class="hint">계정 이름</label><input value="한마음정육식당 검단신도시점"></div>
+        <div><label class="hint">고객 ID</label><input value="3200545"></div></div>
+      <label class="hint" style="display:block;margin-top:10px">액세스라이선스 (API KEY)</label><input placeholder="0100000000...">
+      <label class="hint" style="display:block;margin-top:10px">비밀키 (SECRET KEY)</label><input type="password" placeholder="AQAAAA...">
+      <div style="margin-top:14px"><button class="btn" onclick="toast('실제 버전: 네이버 연결 테스트 후 암호화 저장')">연결 테스트 + 저장</button></div>
+    </div>
+    <div class="panel"><h2>연결된 계정</h2>
+      <div class="flex" style="padding:7px 0;border-bottom:1px solid var(--line)">
+        <span class="badge ok">정상</span><b>한마음정육식당 검단신도시점</b><span class="mono hint">3200545</span>
+        <span class="hint">그룹 2 · 키워드 0</span><span class="grow"></span><button class="btn ghost sm">삭제</button></div>
+      <div class="flex" style="padding:7px 0;border-bottom:1px solid var(--line)">
+        <span class="badge ok">정상</span><b>수림정 천안신방점</b><span class="mono hint">4311402</span>
+        <span class="hint">그룹 3 · 키워드 4</span><span class="grow"></span><button class="btn ghost sm">삭제</button></div>
+      <div class="flex" style="padding:7px 0">
+        <span class="badge dry">키 필요</span><b>부오상회 을지로점</b><span class="mono hint">4160688</span>
+        <span class="grow"></span><button class="btn ghost sm" onclick="toast('폼에 매장명·ID가 자동으로 채워져요')">키 입력</button>
+        <button class="btn ghost sm">삭제</button></div>
+      <p class="hint" style="margin-top:8px">…외 8개 계정 사전 등록됨</p>
+    </div>
+  </section>
+
+  <section class="atab" id="at-bid">
+    <div class="panel">
+      <div class="flex">
+        <select style="width:auto;min-width:240px"><option>한마음정육식당 검단신도시점</option><option>수림정 천안신방점</option></select>
+        <button class="btn ghost sm">새로고침</button><span class="grow"></span>
+        <button class="btn" onclick="toast('✓ 저장 완료 — 그룹 2개, 키워드 2개 자동입찰 대상 (데모)')">전체 저장</button></div>
+      <div class="colhead" style="margin-top:12px"><span>ON</span><span>그룹 / 키워드</span><span>희망순위</span><span>상한가(원)</span><span></span></div>
+      <div class="camp"><span class="tag PLACE">플레이스</span>상위노출 캠페인</div>
+      <div class="growrow">
+        <input type="checkbox" class="toggle" checked>
+        <span class="nm"><b>검단신도시고기집</b><span class="hint">현재 887원 · 일예산 25,000원 · 오늘 평균 <b style="color:#0A7A3D">1.1위</b></span></span>
+        <input type="number" step="0.5" value="3"><input type="number" step="50" value="1500">
+        <button class="btn ghost sm" onclick="toast('플레이스는 제외키워드로 돈 새는 키워드를 차단해요')">제외키워드 ▾</button></div>
+      <div class="growrow">
+        <input type="checkbox" class="toggle" checked>
+        <span class="nm"><b>검단신도시맛집</b><span class="hint">현재 583원 · 일예산 25,000원 · 오늘 평균 <b style="color:#0A7A3D">2.6위</b></span></span>
+        <input type="number" step="0.5" value="3"><input type="number" step="50" value="1500">
+        <button class="btn ghost sm">제외키워드 ▾</button></div>
+      <div class="camp"><span class="tag WEB">파워링크</span>검단 파워링크</div>
+      <div class="growrow">
+        <input type="checkbox" class="toggle" checked>
+        <span class="nm"><b>핵심키워드 그룹</b><span class="hint">현재 300원 · 일예산 20,000원</span></span>
+        <input type="number" step="0.5" value="3"><input type="number" step="50" value="2000">
+        <button class="btn ghost sm" onclick="var z=document.getElementById('kz');z.style.display=z.style.display==='none'?'block':'none'">키워드 관리 ▾</button></div>
+      <div class="kwzone" id="kz">
+        <div class="colhead"><span>관리</span><span>키워드</span><span>희망순위</span><span>상한가</span><span></span></div>
+        <div class="growrow kwrow"><input type="checkbox" class="toggle" checked>
+          <span class="nm"><b>검단신도시맛집</b><span class="hint">현재 450원</span></span>
+          <input type="number" step="0.5" value="2"><input type="number" step="50" value="1800"><span></span></div>
+        <div class="growrow kwrow"><input type="checkbox" class="toggle" checked>
+          <span class="nm"><b>검단고기집</b><span class="hint">현재 380원</span></span>
+          <input type="number" step="0.5" value="3"><input type="number" step="50" value="1500"><span></span></div>
+        <div class="growrow kwrow"><input type="checkbox" class="toggle">
+          <span class="nm"><b>인천맛집</b><span class="hint">CPC 3,387원 비효율 — 관리 제외</span></span>
+          <input type="number" step="0.5" value="3"><input type="number" step="50" value="2000"><span></span></div>
+        <div class="flex" style="margin-top:10px">
+          <input placeholder="새 키워드 (예: 검단회식장소)" style="flex:1">
+          <input type="number" value="100" style="width:90px">
+          <button class="btn ghost sm" onclick="toast('실제 버전: 네이버에 바로 등록')">네이버에 추가</button></div>
+      </div>
+      <div class="note"><b>핵심 화면</b> — 원하는 키워드에 스위치를 켜고 키워드마다 다른 희망순위·상한가를 겁니다.</div>
+    </div>
+  </section>
+
+  <section class="atab" id="at-mon">
+    <div class="panel"><h2>실행</h2>
+      <div class="flex">
+        <button class="btn ghost" onclick="toast('판단만 하고 변경은 안 해요')">1회 실행 (드라이런)</button>
+        <button class="btn warn" onclick="toast('확인창 후 입찰가를 실제로 변경해요')">1회 실행 (실제 적용)</button>
+        <span class="grow"></span><label class="hint" style="margin:0">주기(분)</label>
+        <input type="number" value="60" style="width:76px">
+        <label class="flex" style="margin:0;gap:6px;font-weight:700;width:auto"><input type="checkbox" class="toggle">실제 적용</label>
+        <button class="btn">자동입찰 중지</button></div>
+    </div>
+    <div class="panel"><h2>판단 로그 (예시)</h2>
+      <table><thead><tr><th>시각</th><th>그룹</th><th>대상</th><th>액션</th><th>입찰가</th><th>사유</th></tr></thead><tbody>
+        <tr><td class="num">15:00</td><td>검단신도시고기집</td><td>그룹</td><td><span class="act DOWN">DOWN</span></td><td class="num">1,020 → <b>918</b></td><td>순위 과잉: 평균 1.1위 (목표 3위) — 단가 절약</td></tr>
+        <tr><td class="num">15:00</td><td>핵심키워드 그룹</td><td><b>검단신도시맛집</b></td><td><span class="act HOLD">HOLD</span></td><td class="num">450 → <b>450</b></td><td>목표 유지: 평균 2.2위 (목표 2위)</td></tr>
+        <tr><td class="num">13:00</td><td>검단신도시고기집</td><td>그룹</td><td><span class="act DOWN">DOWN</span></td><td class="num">1,133 → <b>1,020</b></td><td>순위 과잉: 평균 1.4위 — 단가 절약</td></tr>
+        <tr><td class="num">11:00</td><td>핵심키워드 그룹</td><td><b>검단고기집</b></td><td><span class="act UP">UP</span></td><td class="num">345 → <b>380</b></td><td>순위 미달: 평균 4.2위 → 목표 3위</td></tr>
+        <tr><td class="num">10:00</td><td>검단신도시맛집</td><td>그룹</td><td><span class="act HOLD">HOLD</span></td><td class="num">583 → <b>583</b></td><td>순위 4.1위지만 예산 과속 — 인상 보류</td></tr>
+        <tr><td class="num">09:00</td><td>검단신도시고기집</td><td>그룹</td><td><span class="act UP">UP</span></td><td class="num">806 → <b>887</b></td><td>순위 미달: 평균 3.8위 → 목표 3위</td></tr>
+      </tbody></table>
+      <div class="note">아침엔 밀려서 <b>UP</b> → 1위까지 오르자 <b>DOWN</b>으로 절약 → 예산 과속이면 <b>인상 보류</b>. 매시간 자동.</div>
+    </div>
+  </section>
+
+  <section class="atab" id="at-rpt">
+    <div class="panel"><div class="flex">
+      <select style="width:auto;min-width:240px"><option>한마음정육식당 검단신도시점</option></select>
+      <input type="date" value="2026-07-11" style="width:auto">
+      <button class="btn">보고서 생성</button><span class="grow"></span>
+      <button class="btn ghost" onclick="toast('사장님께 카톡으로 보낼 HTML 파일로 저장돼요')">공유용 HTML 저장</button></div></div>
+    <div class="panel"><h2>한마음정육식당 · 2026-07-11 성과 (전일 대비)</h2>
+      <div class="kv">
+        <div class="card"><div class="hint">노출수</div><div style="font-size:21px;font-weight:800" class="mono">1,230</div><span style="color:var(--green);font-size:12px" class="mono">▲176 (12.5%)</span></div>
+        <div class="card"><div class="hint">클릭수</div><div style="font-size:21px;font-weight:800" class="mono">40</div><span style="color:var(--green);font-size:12px" class="mono">▲9 (29.0%)</span></div>
+        <div class="card"><div class="hint">클릭률</div><div style="font-size:21px;font-weight:800" class="mono">3.25%</div><span style="color:var(--green);font-size:12px" class="mono">▲1.05%p</span></div>
+        <div class="card"><div class="hint">CPC</div><div style="font-size:21px;font-weight:800" class="mono">1,206원</div><span style="color:var(--green);font-size:12px" class="mono">▼111원</span></div>
+        <div class="card"><div class="hint">비용</div><div style="font-size:21px;font-weight:800" class="mono">48,250원</div><span style="color:var(--red);font-size:12px" class="mono">▲7,425원</span></div>
+      </div></div>
+    <div class="panel"><h2>자동입찰 성과 (그룹별)</h2>
+      <div class="card" style="margin-bottom:10px"><div class="flex"><b>검단신도시고기집</b><span class="tag PLACE">플레이스</span>
+        <span class="grow"></span><span class="mono" style="font-weight:800;color:var(--green)">평균 1.1위 / 희망 3위</span></div>
+        <div class="hint" style="margin-top:6px">평균 입찰가 887원 · 노출 602 · 클릭 20 · CPC 1,257원 · 비용 25,130원</div></div>
+      <div class="card"><div class="flex"><b>검단신도시맛집</b><span class="tag PLACE">플레이스</span>
+        <span class="grow"></span><span class="mono" style="font-weight:800;color:var(--green)">평균 2.6위 / 희망 3위</span></div>
+        <div class="hint" style="margin-top:6px">평균 입찰가 583원 · 노출 628 · 클릭 20 · CPC 1,156원 · 비용 23,120원</div></div></div>
+    <div class="panel"><h2>키워드 분석 (최근 30일, 비용순)</h2>
+      <table><thead><tr><th>#</th><th>키워드</th><th>노출수</th><th>클릭수</th><th>CPC</th><th>비용</th></tr></thead><tbody>
+        <tr><td class="num">1</td><td><b>음식점</b></td><td class="num">4,933</td><td class="num">84</td><td class="num">1,619원</td><td class="num">136,000원</td></tr>
+        <tr><td class="num">2</td><td><b>검단맛집</b></td><td class="num">1,625</td><td class="num">38</td><td class="num">1,677원</td><td class="num">63,714원</td></tr>
+        <tr><td class="num">3</td><td><b>검단신도시맛집</b></td><td class="num">1,282</td><td class="num">35</td><td class="num">1,559원</td><td class="num">54,573원</td></tr>
+        <tr><td class="num">4</td><td><b>인천맛집</b></td><td class="num">872</td><td class="num">9</td><td class="num" style="color:var(--red)">3,387원</td><td class="num">30,482원</td></tr>
+      </tbody></table></div>
+  </section>
+</div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+<script>
+function go(v){
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  document.getElementById("view-"+v).classList.add("on");
+  window.scrollTo(0,0);
+}
+function toast(t){const e=document.getElementById("toastEl");e.textContent=t;
+  e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2600);}
+document.querySelectorAll(".appnav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".appnav button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".atab").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");document.getElementById("at-"+b.dataset.t).classList.add("on");});
+
+/* 히어로 순위 트랙 */
+(function(){
+  const svg=document.getElementById("dSvg"),logBox=document.getElementById("dLog"),timeEl=document.getElementById("dTime");
+  const L=54,top=16,bot=176;const yOf=r=>top+(Math.min(r,6)-1)/5*(bot-top);
+  const SC=[["09:00",5.6,100,"up"],["10:00",4.7,110,"up"],["11:00",3.9,121,"up"],
+    ["12:00",3.1,133,"hold"],["13:00",2.9,133,"hold"],["14:00",1.9,133,"dn"],
+    ["15:00",2.2,119,"dn"],["16:00",2.9,107,"hold"],["17:00",3.2,107,"hold"]];
+  let idx=0,cur={rank:5.6,bid:100};
+  function draw(){
+    const bt=yOf(2.5),bb=yOf(3.5),cy=yOf(cur.rank),inB=cur.rank>=2.5&&cur.rank<=3.5;
+    let s=`<rect x="${L-12}" y="${bt}" width="24" height="${bb-bt}" rx="6" fill="var(--band)"/>
+      <line x1="${L}" y1="${top}" x2="${L}" y2="${bot}" stroke="var(--line)" stroke-width="2"/>`;
+    for(let r=1;r<=6;r++)s+=`<text x="${L-20}" y="${yOf(r)+4}" font-size="11" fill="var(--mut)" text-anchor="end" font-family="var(--mono)">${r===6?"6+":r+"위"}</text>`;
+    s+=`<text x="${L+30}" y="${yOf(3)+4}" font-size="10.5" fill="#B08D2E" font-weight="700">목표 밴드</text>
+      <circle cx="${L}" cy="${cy}" r="10" fill="${inB?"var(--green)":"var(--deep)"}" opacity=".18"/>
+      <circle cx="${L}" cy="${cy}" r="6.5" fill="${inB?"var(--green)":"var(--deep)"}"/>
+      <text x="300" y="60" font-size="11" fill="var(--mut)">현재 평균순위</text>
+      <text x="300" y="88" font-size="26" font-weight="800" font-family="var(--mono)" fill="${inB?"#0A7A3D":"var(--ink)"}">${cur.rank.toFixed(1)}위</text>
+      <text x="300" y="126" font-size="11" fill="var(--mut)">현재 입찰가</text>
+      <text x="300" y="154" font-size="26" font-weight="800" font-family="var(--mono)">${Math.round(cur.bid)}원</text>`;
+    svg.innerHTML=s;
+  }
+  function frame(){const t=SC[idx];cur.rank+=(t[1]-cur.rank)*.14;cur.bid+=(t[2]-cur.bid)*.14;draw();requestAnimationFrame(frame);}
+  const MSG={up:'순위 미달 → 입찰가 <b class="up">▲ 인상</b>',dn:'순위 과잉 → 입찰가 <b class="dn">▼ 인하</b> (단가 절약)',hold:'목표 밴드 유지 → <b>변경 없음</b>'};
+  function tick(){idx=(idx+1)%SC.length;const t=SC[idx];timeEl.textContent=t[0];
+    const d=document.createElement("div");d.innerHTML=`${t[0]} · 평균 ${t[1].toFixed(1)}위 · ${MSG[t[3]]}`;
+    logBox.prepend(d);while(logBox.children.length>3)logBox.removeChild(logBox.lastChild);}
+  frame();tick();setInterval(tick,2600);
+})();
+</script>
+</body>
+</html>
